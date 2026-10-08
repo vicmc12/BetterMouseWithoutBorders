@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/BetterMouse/BetterMouse.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/BetterMouse.Tests/BetterMouse.Tests.csproj" />
+  </Folder>
+</Solution>

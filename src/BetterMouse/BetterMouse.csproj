@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- .NET Framework 4.8 ships with every Windows 10 (1903+) and Windows 11 install,
+         so the exe runs on the other PC without installing anything (no admin needed). -->
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>BetterMouse</AssemblyName>
+    <RootNamespace>BetterMouse</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <Version>1.3.0</Version>
+    <Product>BetterMouse</Product>
+    <Description>Share one mouse and keyboard between PCs on a local network.</Description>
+    <Copyright>MIT</Copyright>
+    <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Security" />
+    <InternalsVisibleTo Include="BetterMouse.Tests" />
+  </ItemGroup>
+
+</Project>
