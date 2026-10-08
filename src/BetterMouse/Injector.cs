@@ -24,11 +24,19 @@ namespace BetterMouse
         Point cursor;
         volatile bool resync;
 
+        readonly bool verifyEntry;
+
         public event Action<bool> ControlledChanged;
 
-        public Injector(Action<byte[]> send)
+        /// <param name="verifyEntry">
+        /// When true, a background thread re-checks the cursor landed at the entry point. The agent
+        /// passes false: its background threads are not attached to the secure desktop, so that
+        /// check would read the wrong cursor. Injection stays on the agent's own desktop thread.
+        /// </param>
+        public Injector(Action<byte[]> send, bool verifyEntry = true)
         {
             this.send = send;
+            this.verifyEntry = verifyEntry;
         }
 
         public bool IsControlled { get { lock (gate) return controlled; } }
@@ -46,8 +54,11 @@ namespace BetterMouse
                 MoveTo(p);
                 SetCursorPos(p.X, p.Y); // belt and braces: the entry point must never be missed
                 cursor = p;
-                var expected = p;
-                System.Threading.ThreadPool.QueueUserWorkItem(_ => CheckEntry(expected));
+                if (verifyEntry)
+                {
+                    var expected = p;
+                    System.Threading.ThreadPool.QueueUserWorkItem(_ => CheckEntry(expected));
+                }
                 returnEdge = edge;
                 resync = false;
                 changed = !controlled;

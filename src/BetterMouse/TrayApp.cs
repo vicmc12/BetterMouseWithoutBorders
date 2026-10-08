@@ -13,6 +13,8 @@ namespace BetterMouse
         readonly Control ui;
         readonly NotifyIcon tray;
         readonly ToolStripMenuItem statusItem, switchItem, edgeItem, firewallItem, sideMenu, activityItem;
+        readonly ToolStripMenuItem loginMenu, loginEnableItem, loginDisableItem;
+        bool serviceActive;
         readonly Icon iconOffline, iconOnline, iconRemote, iconControlled, iconProblem;
         readonly KvmEngine kvm;
         readonly Injector injector;
@@ -50,6 +52,11 @@ namespace BetterMouse
                 SaveSettings();
             });
             firewallItem = new ToolStripMenuItem("Allow through Windows Firewall…", null, (s, e) => ConfigureFirewall());
+            loginEnableItem = new ToolStripMenuItem("Enable (needs admin once)…", null, (s, e) => EnableLoginScreen());
+            loginDisableItem = new ToolStripMenuItem("Turn off…", null, (s, e) => DisableLoginScreen());
+            loginMenu = new ToolStripMenuItem("Login-screen control");
+            loginMenu.DropDownItems.Add(loginEnableItem);
+            loginMenu.DropDownItems.Add(loginDisableItem);
             sideMenu = new ToolStripMenuItem("Other PC is on my");
             foreach (var side in new[] { Edge.Left, Edge.Right, Edge.Top, Edge.Bottom })
             {
@@ -70,6 +77,7 @@ namespace BetterMouse
             menu.Items.Add("Reconnect now", null, (s, e) => net?.Kick());
             menu.Items.Add("Network check…", null, (s, e) => NetworkCheck.ShowDialog(() => settings, () => net));
             menu.Items.Add(firewallItem);
+            menu.Items.Add(loginMenu);
             menu.Items.Add("Open log", null, (s, e) => OpenLog());
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add("Exit", null, (s, e) => ExitThread());
@@ -264,10 +272,24 @@ namespace BetterMouse
                 case SessionSwitchReason.RemoteConnect:
                     kvm.ForceLocal("session " + e.Reason);
                     injector.ReturnControl(); // input can't reach a locked screen: hand the cursor back
+                    // If login-screen control is on, release the connection so the SYSTEM service
+                    // agent (which CAN reach the lock screen) takes over while we're locked.
+                    if (ServiceControl.IsRunning())
+                    {
+                        serviceActive = true;
+                        Log.Info("Locked: handing the connection to the login-screen service");
+                        StopNetwork();
+                    }
                     break;
                 case SessionSwitchReason.SessionUnlock:
                 case SessionSwitchReason.ConsoleConnect:
                     kvm.ResetKeyState();
+                    if (serviceActive || net == null)
+                    {
+                        serviceActive = false;
+                        Log.Info("Unlocked: taking the connection back from the login-screen service");
+                        StartNetwork();
+                    }
                     break;
             }
         }
@@ -374,6 +396,12 @@ namespace BetterMouse
             sideMenu.Text = $"{(net?.Current?.PeerName ?? "Other PC")} is on my";
             foreach (ToolStripMenuItem item in sideMenu.DropDownItems)
                 item.Checked = (Edge)item.Tag == s.PeerSide;
+
+            bool installed = ServiceControl.IsInstalled();
+            serviceActive = installed && ServiceControl.IsRunning();
+            loginMenu.Text = "Login-screen control: " + (installed ? (serviceActive ? "on" : "installed") : "off");
+            loginEnableItem.Text = installed ? "Re-apply current settings (admin)…" : "Enable (needs admin once)…";
+            loginDisableItem.Visible = installed;
         }
 
         /// <summary>The user picked a side here (tray menu or Settings): apply and tell the other PC.</summary>
@@ -480,6 +508,35 @@ namespace BetterMouse
                 firewallMissing = false;
                 UpdateTray();
             }
+            MessageBox.Show(message, AppInfo.Name, MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+        }
+
+        void EnableLoginScreen()
+        {
+            if (!settings.IsComplete)
+            {
+                MessageBox.Show("Set up the connection first (role, security key, and the host address on a client), then try again.",
+                    AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                ShowSettings(false);
+                return;
+            }
+            var answer = MessageBox.Show(
+                "Turn on login-screen control for THIS PC?\n\n" +
+                "It installs a small Windows service so your shared mouse and keyboard can reach this PC's " +
+                "login, lock and UAC screens. You still type your own password — it is not bypassed.\n\n" +
+                "Windows will ask for administrator permission once. Do this on the PC you want to unlock remotely.",
+                AppInfo.Name, MessageBoxButtons.OKCancel, MessageBoxIcon.Question);
+            if (answer != DialogResult.OK) return;
+            bool ok = ServiceControl.Enable(out var message);
+            UpdateTray();
+            MessageBox.Show(message, AppInfo.Name, MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+        }
+
+        void DisableLoginScreen()
+        {
+            bool ok = ServiceControl.Disable(out var message);
+            serviceActive = false;
+            UpdateTray();
             MessageBox.Show(message, AppInfo.Name, MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
 

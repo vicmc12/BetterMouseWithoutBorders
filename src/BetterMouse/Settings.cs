@@ -136,14 +136,16 @@ namespace BetterMouse
 
         public Settings Clone() => (Settings)MemberwiseClone();
 
-        public static Settings Load()
+        public static Settings Load() => LoadFrom(FilePath, DataProtectionScope.CurrentUser);
+
+        public static Settings LoadFrom(string path, DataProtectionScope scope)
         {
             var s = new Settings();
             try
             {
-                if (!File.Exists(FilePath)) return s;
+                if (!File.Exists(path)) return s;
                 var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (var raw in File.ReadAllLines(FilePath, Encoding.UTF8))
+                foreach (var raw in File.ReadAllLines(path, Encoding.UTF8))
                 {
                     var line = raw.Trim();
                     if (line.Length == 0 || line.StartsWith("#") || line.StartsWith(";")) continue;
@@ -164,7 +166,7 @@ namespace BetterMouse
                 s.ShareFiles = Bool(values, "ShareFiles", s.ShareFiles);
                 s.MaxClipboardMB = Int(values, "MaxClipboardMB", s.MaxClipboardMB, 1, 4096);
                 s.LastGoodAddress = Str(values, "LastGoodAddress", s.LastGoodAddress);
-                s.SecurityKey = UnprotectKey(Str(values, "SecurityKey", ""));
+                s.SecurityKey = UnprotectKey(Str(values, "SecurityKey", ""), scope);
             }
             catch (Exception ex)
             {
@@ -173,9 +175,11 @@ namespace BetterMouse
             return s;
         }
 
-        public void Save()
+        public void Save() => SaveTo(FilePath, DataProtectionScope.CurrentUser);
+
+        public void SaveTo(string path, DataProtectionScope scope)
         {
-            Directory.CreateDirectory(DataDirectory);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
             var sb = new StringBuilder();
             sb.AppendLine("# " + AppInfo.Name + " settings. Edit through the tray icon > Settings.");
             sb.AppendLine("Role=" + Role);
@@ -190,29 +194,33 @@ namespace BetterMouse
             sb.AppendLine("ShareFiles=" + ShareFiles);
             sb.AppendLine("MaxClipboardMB=" + MaxClipboardMB);
             sb.AppendLine("LastGoodAddress=" + LastGoodAddress);
-            sb.AppendLine("SecurityKey=" + ProtectKey(SecurityKey));
-            var tmp = FilePath + ".tmp";
+            sb.AppendLine("SecurityKey=" + ProtectKey(SecurityKey, scope));
+            var tmp = path + ".tmp";
             File.WriteAllText(tmp, sb.ToString(), Encoding.UTF8);
-            if (File.Exists(FilePath)) File.Replace(tmp, FilePath, null);
-            else File.Move(tmp, FilePath);
+            if (File.Exists(path)) File.Replace(tmp, path, null);
+            else File.Move(tmp, path);
         }
 
-        /// <summary>The key is encrypted for the current Windows user (DPAPI) before it touches the disk.</summary>
-        static string ProtectKey(string key)
+        /// <summary>
+        /// The key is DPAPI-encrypted before it touches the disk. CurrentUser for the normal
+        /// per-user settings; LocalMachine for the service's machine-wide settings, which SYSTEM
+        /// must be able to read (any account on this PC can then decrypt it, like any machine service secret).
+        /// </summary>
+        static string ProtectKey(string key, DataProtectionScope scope)
         {
             if (string.IsNullOrEmpty(key)) return "";
-            var blob = ProtectedData.Protect(Encoding.UTF8.GetBytes(key), Entropy, DataProtectionScope.CurrentUser);
+            var blob = ProtectedData.Protect(Encoding.UTF8.GetBytes(key), Entropy, scope);
             return "dpapi:" + Convert.ToBase64String(blob);
         }
 
-        static string UnprotectKey(string stored)
+        static string UnprotectKey(string stored, DataProtectionScope scope)
         {
             if (string.IsNullOrEmpty(stored)) return "";
             if (!stored.StartsWith("dpapi:", StringComparison.Ordinal)) return stored; // hand-written plain key
             try
             {
                 var blob = Convert.FromBase64String(stored.Substring(6));
-                return Encoding.UTF8.GetString(ProtectedData.Unprotect(blob, Entropy, DataProtectionScope.CurrentUser));
+                return Encoding.UTF8.GetString(ProtectedData.Unprotect(blob, Entropy, scope));
             }
             catch (Exception ex)
             {

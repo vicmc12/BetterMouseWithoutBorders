@@ -106,13 +106,38 @@ Better Mouse Without Borders allowed on the host.
 
 ## Limits (Windows rules for non-admin apps)
 
-On the PC being controlled, Windows does not let a normal app type into:
+In normal (no-admin) mode, on the PC being controlled Windows does not let the app type into:
 - the lock screen / login screen, `Ctrl+Alt+Del`, or UAC prompts
 - windows of programs running "as administrator"
 
-Use that PC's own keyboard for those, then carry on. (Mouse Without Borders gets around this with a
-SYSTEM service, which needs admin rights to install.) Keys like `Win+L` always act on the PC you
-physically press them on. Better Mouse Without Borders supports two PCs.
+Use that PC's own keyboard for those, or turn on **login-screen control** below. Keys like `Win+L`
+always act on the PC you physically press them on. Better Mouse Without Borders supports two PCs.
+
+## Login-screen control (optional, needs admin once)
+
+By default the app runs as a normal user with no admin rights. To also reach a PC's **login, lock
+and UAC screens** (so you can type your password there from the other PC), that PC needs a small
+Windows service — the same approach Mouse Without Borders uses, and the same reason it needs admin:
+only a SYSTEM service is allowed onto Windows' protected "secure desktop". **It does not bypass your
+password — you still type it;** it only lets your shared keyboard and mouse reach that screen.
+
+Turn it on **on the PC you want to unlock remotely**:
+- Tray icon → **Login-screen control → Enable (needs admin once)…**, approve the UAC prompt. Or from
+  an administrator terminal: `BetterMouseWithoutBorders.exe --install-service`.
+- Turn it off with the tray menu, or `BetterMouseWithoutBorders.exe --uninstall-service` (admin).
+
+How it works: while that PC is unlocked, the normal no-admin app runs as usual. When it locks or sits
+at the login screen, a background service (LocalSystem) takes over the connection and injects your
+mouse and keyboard into the secure desktop; on unlock, control hands back. Each hand-off is a
+one-to-two-second reconnect. The service stores a machine-wide copy of your settings in
+`%ProgramData%\BetterMouseWithoutBorders\` (the key encrypted for this machine). If you later change
+the role, key or host address, re-run **Enable** (or `--install-service`) to update it.
+
+Notes:
+- Do this on the PC being unlocked. On a work laptop where you are not an administrator, only your
+  IT can install it.
+- It can't *unlock* an already-locked PC it was never set up on, and it can't run where the whole
+  machine is managed to forbid new services.
 
 ## Security
 

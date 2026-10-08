@@ -18,6 +18,8 @@
     <ProjectReference Include="..\..\src\BetterMouse\BetterMouse.csproj" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.ServiceProcess" />
   </ItemGroup>
 
 </Project>

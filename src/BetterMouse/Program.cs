@@ -11,12 +11,30 @@ namespace BetterMouse
         [STAThread]
         static int Main(string[] args)
         {
+            bool Has(string a) => args.Contains(a, StringComparer.OrdinalIgnoreCase);
+
+            // Login-screen service and its SYSTEM agent run as LocalSystem, so they log to the
+            // machine-wide folder and never init WinForms or the per-user mutex.
+            if (Has(ServiceControl.ServiceArg))
+            {
+                Log.Init(MachineSettings.DataDirectory);
+                try { ServiceHost.Run(); } catch (Exception ex) { Log.Error("Service host", ex); Log.Flush(); return 1; }
+                return 0;
+            }
+            if (Has(ServiceControl.AgentArg))
+            {
+                Log.Init(MachineSettings.DataDirectory);
+                try { return AgentHost.Run(); } catch (Exception ex) { Log.Error("Agent host", ex); Log.Flush(); return 1; }
+            }
+            if (Has(ServiceControl.InstallArg)) { Log.Init(MachineSettings.DataDirectory); return ServiceControl.InstallElevated(args); }
+            if (Has(ServiceControl.UninstallArg)) { Log.Init(MachineSettings.DataDirectory); return ServiceControl.UninstallElevated(); }
+
             var migrated = Settings.MigrateFromLegacyName(); // before anything reads settings or opens the log
             Log.Init(Settings.DataDirectory);
             if (migrated != null) Log.Info("Renamed to " + AppInfo.Name + ": copied " + migrated);
 
             // Elevated helper started by the "Allow through Windows Firewall" button (host PC only).
-            if (args.Contains(Firewall.ElevatedArgument, StringComparer.OrdinalIgnoreCase))
+            if (Has(Firewall.ElevatedArgument))
             {
                 int code = Firewall.ApplyRules();
                 Log.Flush();

@@ -13,7 +13,7 @@
     <ApplicationIcon>app.ico</ApplicationIcon>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
-    <Version>1.4.0</Version>
+    <Version>1.5.0</Version>
     <Product>Better Mouse Without Borders</Product>
     <AssemblyTitle>Better Mouse Without Borders</AssemblyTitle>
     <Description>Share one mouse and keyboard between PCs on a local network.</Description>
@@ -23,6 +23,8 @@
 
   <ItemGroup>
     <Reference Include="System.Security" />
+    <!-- Login-screen service host (ServiceBase, ServiceController). -->
+    <Reference Include="System.ServiceProcess" />
     <InternalsVisibleTo Include="BetterMouse.Tests" />
   </ItemGroup>
 
