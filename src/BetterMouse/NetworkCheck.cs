@@ -23,14 +23,14 @@ namespace BetterMouse
         public static string Run(Settings s, NetworkManager net)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"BetterMouse {AppInfo.Version} network check, {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"{AppInfo.Name} {AppInfo.Version} network check, {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             sb.AppendLine($"This PC: {Environment.MachineName} ({s.Role}), port {s.Port}");
             var conn = net?.Current;
             sb.AppendLine(conn != null ? $"Status: connected to {conn.PeerName} at {conn.PeerAddress}" : "Status: " + (net?.Detail ?? "not running"));
             if (conn != null)
             {
                 sb.AppendLine(conn.LastRttMs < 0
-                    ? "Round trip: not measured yet (needs BetterMouse 1.2 on both PCs)"
+                    ? "Round trip: not measured yet (needs version 1.2 or newer on both PCs)"
                     : $"Round trip: {conn.LastRttMs} ms now, worst {conn.WorstRttMs} ms since connecting " +
                       (conn.WorstRttMs >= 150 ? "(spikes: expect brief cursor stalls; Wi-Fi power saving or a busy network)" : "(good)"));
             }
@@ -50,7 +50,7 @@ namespace BetterMouse
             if (s.Role == Role.Host)
             {
                 bool rule = Firewall.RuleLooksPresent();
-                sb.AppendLine("Firewall rule for BetterMouse: " + (rule ? "present (all network types)" : "MISSING"));
+                sb.AppendLine("Firewall rule for " + AppInfo.Name + ": " + (rule ? "present (all network types)" : "MISSING"));
                 sb.AppendLine();
                 sb.AppendLine("Verdict:");
                 if (conn != null) sb.AppendLine("  Working: the other PC is connected.");
@@ -103,17 +103,17 @@ namespace BetterMouse
             if (anyOk && rescuedByAdapter)
             {
                 sb.AppendLine("  Works. Your VPN claims your home network's addresses for its own tunnel (its networks");
-                sb.AppendLine("  overlap with yours), but the host answers through your local adapter, and BetterMouse");
+                sb.AppendLine("  overlap with yours), but the host answers through your local adapter, and the app");
                 sb.AppendLine("  now connects that way automatically.");
             }
             else if (anyOk)
             {
-                sb.AppendLine("  The host is reachable. If BetterMouse still doesn't connect, check that both PCs use");
+                sb.AppendLine("  The host is reachable. If it still doesn't connect, check that both PCs use");
                 sb.AppendLine("  the same security key and port (the tray icon turns red on a key mismatch).");
             }
             else if (anyRefused)
             {
-                sb.AppendLine($"  The host PC answered, but nothing is listening on port {s.Port}: start BetterMouse on");
+                sb.AppendLine($"  The host PC answered, but nothing is listening on port {s.Port}: start " + AppInfo.Name + " on");
                 sb.AppendLine("  the host and make sure both PCs use the same port.");
             }
             else if (vpnUp)
@@ -121,10 +121,10 @@ namespace BetterMouse
                 sb.AppendLine("  Nothing reaches your home network while the VPN is connected. The VPN is set to block");
                 sb.AppendLine("  the local network (FortiClient: \"exclusive routing\", or \"local LAN access\" turned off).");
                 sb.AppendLine("  That is a security setting of the VPN, usually controlled by your company's IT;");
-                sb.AppendLine("  BetterMouse doesn't try to get around it. Options:");
+                sb.AppendLine("  " + AppInfo.Name + " doesn't try to get around it. Options:");
                 sb.AppendLine("   - ask IT whether your VPN profile can allow local LAN access / split tunnelling;");
                 sb.AppendLine("   - if you created this VPN connection yourself, look for a local-LAN-access option in it;");
-                sb.AppendLine("   - otherwise BetterMouse reconnects by itself a few seconds after the VPN disconnects.");
+                sb.AppendLine("   - otherwise it reconnects by itself a few seconds after the VPN disconnects.");
                 if (routedIntoVpn)
                     sb.AppendLine("  (Windows also routes the host's address into the VPN, and dialing through the local adapter was blocked too.)");
             }
@@ -151,7 +151,7 @@ namespace BetterMouse
             catch (Exception ex)
             {
                 var se = ex.GetBaseException() as SocketException;
-                if (se?.SocketErrorCode == SocketError.ConnectionRefused) { text = "refused (PC is there, BetterMouse not listening)"; return Result.Refused; }
+                if (se?.SocketErrorCode == SocketError.ConnectionRefused) { text = "refused (PC is there, the app is not listening)"; return Result.Refused; }
                 if (se?.SocketErrorCode == SocketError.TimedOut) { text = "no answer (timed out)"; return Result.TimedOut; }
                 text = "failed: " + ex.GetBaseException().Message;
                 return Result.Failed;
@@ -183,7 +183,7 @@ namespace BetterMouse
         {
             var form = new Form
             {
-                Text = "BetterMouse – Network check",
+                Text = AppInfo.Name + " – Network check",
                 Font = SystemFonts.MessageBoxFont,
                 StartPosition = FormStartPosition.CenterScreen,
                 Icon = Icons.Create(Icons.Online),

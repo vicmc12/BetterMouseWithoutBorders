@@ -75,7 +75,7 @@ namespace BetterMouse
             menu.Items.Add("Exit", null, (s, e) => ExitThread());
             menu.Opening += (s, e) => RefreshMenu();
 
-            tray = new NotifyIcon { Icon = iconOffline, Text = "BetterMouse", ContextMenuStrip = menu, Visible = true };
+            tray = new NotifyIcon { Icon = iconOffline, Text = AppInfo.Name, ContextMenuStrip = menu, Visible = true };
             tray.DoubleClick += (s, e) => ShowSettings(false);
 
             // "Connected" for switching purposes = heard from the other PC within the last 2.5 s
@@ -100,7 +100,7 @@ namespace BetterMouse
             SystemEvents.SessionSwitch += OnSessionSwitch;
             SystemEvents.PowerModeChanged += OnPowerModeChanged;
 
-            Log.Info($"BetterMouse {AppInfo.Version} started on {Environment.MachineName}; screens {ScreenLayout.Current}");
+            Log.Info($"{AppInfo.Name} {AppInfo.Version} started on {Environment.MachineName}; screens {ScreenLayout.Current}");
             if (!settings.IsComplete)
             {
                 Ui(() => ShowSettings(true));
@@ -119,10 +119,18 @@ namespace BetterMouse
             System.Threading.Tasks.Task.Run(() => Firewall.RuleLooksPresent()).ContinueWith(t =>
             {
                 if (t.Status == System.Threading.Tasks.TaskStatus.RanToCompletion && !t.Result)
-                    Ui(() => Balloon("Windows Firewall may block the other PC. Right-click the tray icon > " +
-                                     "Allow through Windows Firewall.", ToolTipIcon.Warning));
+                    Ui(() =>
+                    {
+                        // No pop-up: shown in the tray tooltip/menu while nothing is connected.
+                        firewallMissing = true;
+                        Log.Warn("No firewall rule for this exe (new install, renamed or moved). " +
+                                 "Tray menu > Allow through Windows Firewall.");
+                        UpdateTray();
+                    });
             });
         }
+
+        bool firewallMissing;
 
         // ------------------------------------------------------------ network
 
@@ -324,10 +332,35 @@ namespace BetterMouse
                     text = linkDetail;
                     break;
             }
+            if (firewallMissing && linkState != LinkState.Connected && settings.Role == Role.Host)
+            {
+                icon = iconProblem;
+                text = "Firewall rule missing: right-click > Allow through Windows Firewall";
+            }
             tray.Icon = icon;
-            var tip = "BetterMouse – " + text;
-            tray.Text = tip.Length > 63 ? tip.Substring(0, 60) + "…" : tip; // NotifyIcon limit
+            SetTrayTip(AppInfo.Name + "\n" + text);
             statusItem.Text = text;
+        }
+
+        /// <summary>
+        /// Windows allows 127 characters in a tray tooltip, but WinForms on .NET Framework rejects
+        /// more than 63, too short for the name plus a status. Set the field directly when possible.
+        /// </summary>
+        void SetTrayTip(string tip)
+        {
+            if (tip.Length > 127) tip = tip.Substring(0, 126) + "…";
+            try
+            {
+                const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                var type = typeof(NotifyIcon);
+                type.GetField("text", flags).SetValue(tray, tip);
+                if ((bool)type.GetField("added", flags).GetValue(tray))
+                    type.GetMethod("UpdateIcon", flags).Invoke(tray, new object[] { true });
+            }
+            catch
+            {
+                tray.Text = tip.Length > 63 ? tip.Substring(0, 62) + "…" : tip;
+            }
         }
 
         void RefreshMenu()
@@ -424,7 +457,7 @@ namespace BetterMouse
                     var answer = MessageBox.Show(
                         "This PC is the Host. Add a Windows Firewall rule so the other PC can always connect " +
                         "(also when the internet is down or the network is marked Public)?\n\nWindows will ask for admin permission once.",
-                        "BetterMouse", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                        AppInfo.Name, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                     if (answer == DialogResult.Yes) ConfigureFirewall();
                 }
 
@@ -442,7 +475,12 @@ namespace BetterMouse
         void ConfigureFirewall()
         {
             bool ok = Firewall.ConfigureWithElevation(out var message);
-            MessageBox.Show(message, "BetterMouse", MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+            if (ok)
+            {
+                firewallMissing = false;
+                UpdateTray();
+            }
+            MessageBox.Show(message, AppInfo.Name, MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
         }
 
         void SaveSettings()

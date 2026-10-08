@@ -83,7 +83,7 @@ namespace BetterMouse
             wake.Set();
             lock (gate) { try { listener?.Stop(); } catch { } }
             responder?.Dispose();
-            Current?.CloseGracefully("BetterMouse stopped");
+            Current?.CloseGracefully(AppInfo.Name + " stopped");
             worker?.Join(3000);
             SetStatus(LinkState.Idle, "Stopped");
         }

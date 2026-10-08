@@ -22,7 +22,7 @@ namespace BetterMouse
             try
             {
                 Directory.CreateDirectory(directory);
-                path = Path.Combine(directory, "BetterMouse.log");
+                path = Path.Combine(directory, AppInfo.FileName + ".log");
                 var info = new FileInfo(path);
                 if (info.Exists && info.Length > MaxBytes)
                 {

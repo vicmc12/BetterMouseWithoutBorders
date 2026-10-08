@@ -11,7 +11,9 @@ namespace BetterMouse
         [STAThread]
         static int Main(string[] args)
         {
+            var migrated = Settings.MigrateFromLegacyName(); // before anything reads settings or opens the log
             Log.Init(Settings.DataDirectory);
+            if (migrated != null) Log.Info("Renamed to " + AppInfo.Name + ": copied " + migrated);
 
             // Elevated helper started by the "Allow through Windows Firewall" button (host PC only).
             if (args.Contains(Firewall.ElevatedArgument, StringComparer.OrdinalIgnoreCase))
@@ -25,11 +27,12 @@ namespace BetterMouse
             {
                 if (!first)
                 {
-                    MessageBox.Show("BetterMouse is already running – look for the mouse icon in the system tray.",
-                        "BetterMouse", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(AppInfo.Name + " is already running – look for the mouse icon in the system tray.",
+                        AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Information);
                     return 0;
                 }
 
+                if (Autostart.MigrateFromLegacyName()) Log.Info("Start-with-Windows entry renamed to " + AppInfo.Name);
                 GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
@@ -44,8 +47,8 @@ namespace BetterMouse
                 {
                     Log.Error("Fatal", ex);
                     Log.Flush();
-                    MessageBox.Show("BetterMouse stopped because of an error:\n\n" + ex.Message + "\n\nLog: " + Log.FilePath,
-                        "BetterMouse", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(AppInfo.Name + " stopped because of an error:\n\n" + ex.Message + "\n\nLog: " + Log.FilePath,
+                        AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return 1;
                 }
                 GC.KeepAlive(mutex);

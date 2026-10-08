@@ -42,6 +42,12 @@ namespace BetterMouse
 
     internal static class AppInfo
     {
+        /// <summary>Display name: windows, tray, dialogs, firewall rule, autostart.</summary>
+        public const string Name = "Better Mouse Without Borders";
+        /// <summary>File/folder name: exe, settings folder, ini, log.</summary>
+        public const string FileName = "BetterMouseWithoutBorders";
+        /// <summary>Name used up to 1.3.0 (migrated automatically).</summary>
+        public const string LegacyFileName = "BetterMouse";
         public const int ProtocolVersion = 1;
         public static readonly string Version = typeof(AppInfo).Assembly.GetName().Version.ToString(3);
     }

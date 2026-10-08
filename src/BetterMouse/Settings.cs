@@ -55,7 +55,9 @@ namespace BetterMouse
     internal sealed class Settings
     {
         public const int DefaultPort = 15155;
-        const string FileName = "BetterMouse.ini";
+        const string FileName = AppInfo.FileName + ".ini";
+        const string LegacyFileName = AppInfo.LegacyFileName + ".ini";
+        // Must never change: it is part of how the saved security key is encrypted.
         static readonly byte[] Entropy = Encoding.UTF8.GetBytes("BetterMouse settings v1");
 
         public Role Role = Role.Host;
@@ -85,18 +87,47 @@ namespace BetterMouse
             SecurityKey.Trim().Length >= 6 &&
             (Role == Role.Host || Discovery || PeerAddress.Trim().Length > 0);
 
+        static string ExeDir => AppDomain.CurrentDomain.BaseDirectory;
+        static string AppDataDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppInfo.FileName);
+        static string LegacyAppDataDir => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), AppInfo.LegacyFileName);
+
         /// <summary>
-        /// Portable mode if BetterMouse.ini sits next to the exe; otherwise %APPDATA%\BetterMouse.
-        /// Either way, writable without admin rights.
+        /// Portable mode if BetterMouseWithoutBorders.ini sits next to the exe; otherwise
+        /// %APPDATA%\BetterMouseWithoutBorders. Either way, writable without admin rights.
         /// </summary>
-        public static string DataDirectory
+        public static string DataDirectory =>
+            File.Exists(Path.Combine(ExeDir, FileName)) ? ExeDir : AppDataDir;
+
+        /// <summary>
+        /// Up to 1.3.0 the app was called BetterMouse: carry its settings (role, key, side…) over
+        /// once. Copies rather than moves, so the old exe keeps working if you go back.
+        /// Returns a description of what was migrated, or null.
+        /// </summary>
+        public static string MigrateFromLegacyName()
         {
-            get
+            try
             {
-                var exeDir = AppDomain.CurrentDomain.BaseDirectory;
-                if (File.Exists(Path.Combine(exeDir, FileName))) return exeDir;
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "BetterMouse");
+                var portableNew = Path.Combine(ExeDir, FileName);
+                var portableOld = Path.Combine(ExeDir, LegacyFileName);
+                if (!File.Exists(portableNew) && File.Exists(portableOld))
+                {
+                    File.Copy(portableOld, portableNew);
+                    return "settings next to the exe (" + LegacyFileName + ")";
+                }
+                var newIni = Path.Combine(AppDataDir, FileName);
+                var oldIni = Path.Combine(LegacyAppDataDir, LegacyFileName);
+                if (!File.Exists(newIni) && File.Exists(oldIni))
+                {
+                    Directory.CreateDirectory(AppDataDir);
+                    File.Copy(oldIni, newIni);
+                    return "settings from " + LegacyAppDataDir;
+                }
             }
+            catch
+            {
+                // Worst case the first-run setup appears again.
+            }
+            return null;
         }
 
         public static string FilePath => Path.Combine(DataDirectory, FileName);
@@ -146,7 +177,7 @@ namespace BetterMouse
         {
             Directory.CreateDirectory(DataDirectory);
             var sb = new StringBuilder();
-            sb.AppendLine("# BetterMouse settings. Edit through the tray icon > Settings.");
+            sb.AppendLine("# " + AppInfo.Name + " settings. Edit through the tray icon > Settings.");
             sb.AppendLine("Role=" + Role);
             sb.AppendLine("Port=" + Port);
             sb.AppendLine("PeerAddress=" + PeerAddress.Trim());
@@ -206,9 +237,32 @@ namespace BetterMouse
     internal static class Autostart
     {
         const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        const string ValueName = "BetterMouse";
+        const string ValueName = AppInfo.Name;
+        const string LegacyValueName = AppInfo.LegacyFileName;
 
         static string Command => "\"" + System.Windows.Forms.Application.ExecutablePath + "\" --autostart";
+
+        /// <summary>
+        /// If the old "BetterMouse" entry (pointing at the old exe) exists, replace it with one for
+        /// this exe under the new name. Returns true if it did.
+        /// </summary>
+        public static bool MigrateFromLegacyName()
+        {
+            try
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey(RunKey))
+                {
+                    if (key.GetValue(LegacyValueName) == null) return false;
+                    key.DeleteValue(LegacyValueName);
+                    key.SetValue(ValueName, Command);
+                    return true;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         public static bool IsEnabled
         {

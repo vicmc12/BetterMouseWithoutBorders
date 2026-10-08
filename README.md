@@ -1,4 +1,4 @@
-# BetterMouse
+# Better Mouse Without Borders
 
 Use one mouse and keyboard across two Windows PCs, like Mouse Without Borders, but:
 
@@ -14,7 +14,7 @@ Use one mouse and keyboard across two Windows PCs, like Mouse Without Borders, b
 
 1. **Turn off PowerToys → Mouse Without Borders on both PCs.** Two tools fighting over the
    screen edge will misbehave.
-2. Copy `dist\BetterMouse.exe` to both PCs, into any folder you like (for example `Documents\BetterMouse`).
+2. Copy `dist\BetterMouseWithoutBorders.exe` to both PCs, into any folder you like (for example `Documents\BetterMouseWithoutBorders`).
    If Windows shows "Windows protected your PC", click **More info → Run anyway**. That needs no admin rights.
 3. **On your PC (the one where you're admin): run it and choose _Host_.**
    - Click **Generate** to make a security key, and write it down.
@@ -25,7 +25,7 @@ Use one mouse and keyboard across two Windows PCs, like Mouse Without Borders, b
      reason these tools stop working when the internet drops.
 4. **On the other PC: run it and choose _Client_.**
    - Type the host's IP address and the **same** security key, then click OK.
-5. Tell BetterMouse where the other PC sits: in **Settings → Where is the other PC?**, click the box
+5. Tell the app where the other PC sits: in **Settings → Where is the other PC?**, click the box
    on the side where the other PC's screen actually is on your desk. You can also use the tray menu
    → **"<other PC> is on my" → Left / Right / Top / Bottom**. You only need to do this on **one** PC:
    the other PC mirrors it automatically. If you say "the laptop is on my left" here, the laptop
@@ -34,6 +34,15 @@ Use one mouse and keyboard across two Windows PCs, like Mouse Without Borders, b
 
 When you switch from PC A to PC B, the cursor always comes back through the edge it went in, at the
 same height.
+
+### Upgrading from BetterMouse (1.3 or earlier)
+
+The app was renamed in 1.4 and the exe is now `BetterMouseWithoutBorders.exe`.
+1. On both PCs: tray → **Exit** the old version, then start the new exe. Your settings (role, key,
+   side…) and "start with Windows" carry over automatically. You can delete the old `BetterMouse.exe`.
+2. **On the host only:** the old firewall rule belonged to the old exe. Right-click the tray icon →
+   **Allow through Windows Firewall…** once (one admin prompt). Until you do, the tray icon is red
+   and says so.
 
 ## Everyday use
 
@@ -70,7 +79,7 @@ Settings asks whether to **start with Windows** (on by default). This uses your 
 
 **If the router itself dies**, every LAN tool loses the connection. That includes this one, because
 there's no network left between the PCs. A cheap Ethernet cable straight between the two PCs (or a
-small switch) keeps working without a router. BetterMouse uses it automatically, and the LAN search
+small switch) keeps working without a router. Better Mouse Without Borders uses it automatically, and the LAN search
 finds the other PC on the cable's `169.254.x.x` addresses.
 
 ## VPNs (FortiClient and others)
@@ -79,21 +88,21 @@ When a VPN is connected on one of the PCs, two different things can stop the PCs
 Tray menu → **Network check** (on the PC with the VPN) tells you which one you have:
 
 1. **The VPN's networks overlap your home network.** For example, the company also uses `192.168.x.x`,
-   so Windows sends traffic for your other PC into the VPN tunnel. BetterMouse handles this
+   so Windows sends traffic for your other PC into the VPN tunnel. The app handles this
    automatically: when the other PC is on the same subnet as your Wi-Fi/Ethernet adapter, it also
    connects through that adapter directly. The Network check then says *"Works … connects that way
    automatically"*.
 2. **The VPN is set to block the local network.** FortiClient calls this "exclusive routing", or
    "local LAN access" turned off; other VPNs call it a "kill switch". It's a security setting,
-   usually controlled by your company's IT, and enforced below the network routes. BetterMouse doesn't
+   usually controlled by your company's IT, and enforced below the network routes. The app doesn't
    try to get around it. Your options:
    - ask IT whether your VPN profile can allow **local LAN access / split tunnelling**;
    - if you created the VPN connection yourself in FortiClient, check that connection's settings for
      local LAN access;
-   - otherwise, BetterMouse reconnects by itself a few seconds after the VPN disconnects.
+   - otherwise, the app reconnects by itself a few seconds after the VPN disconnects.
 
 Third-party security suites with their own firewall (Kaspersky, Norton, …) may also need
-BetterMouse allowed on the host.
+Better Mouse Without Borders allowed on the host.
 
 ## Limits (Windows rules for non-admin apps)
 
@@ -103,7 +112,7 @@ On the PC being controlled, Windows does not let a normal app type into:
 
 Use that PC's own keyboard for those, then carry on. (Mouse Without Borders gets around this with a
 SYSTEM service, which needs admin rights to install.) Keys like `Win+L` always act on the PC you
-physically press them on. BetterMouse supports two PCs.
+physically press them on. Better Mouse Without Borders supports two PCs.
 
 ## Security
 
@@ -115,16 +124,16 @@ encrypted for your Windows user (DPAPI).
 
 ## Files
 
-- Settings and log: `%APPDATA%\BetterMouse\` (`BetterMouse.ini`, `BetterMouse.log`).
-  For a portable install, put a `BetterMouse.ini` next to the exe and everything stays in that folder.
-- Files received through the clipboard: `%TEMP%\BetterMouse\Clipboard\` (only the latest copy is kept).
+- Settings and log: `%APPDATA%\BetterMouseWithoutBorders\` (`BetterMouseWithoutBorders.ini`, `BetterMouseWithoutBorders.log`).
+  For a portable install, put a `BetterMouseWithoutBorders.ini` next to the exe and everything stays in that folder.
+- Files received through the clipboard: `%TEMP%\BetterMouseWithoutBorders\Clipboard\` (only the latest copy is kept).
 - Default port: TCP and UDP `15155`. You can change it, but it must be the same on both PCs.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| Client stays grey, "Host not reachable" | Check the IP (Settings on the host lists it). Check that BetterMouse runs on the host. On the host, right-click the tray icon → **Allow through Windows Firewall…** |
+| Client stays grey, "Host not reachable" | Check the IP (Settings on the host lists it). Check that the app runs on the host. On the host, right-click the tray icon → **Allow through Windows Firewall…** |
 | Red, "Security key does not match" | Type exactly the same key on both PCs |
 | Red, "Both PCs are set to Client/Host" | One PC must be Host and the other Client |
 | You must go right to reach a PC that's on your left | Tray menu → "<other PC> is on my" → Left (the other PC mirrors it) |
@@ -139,7 +148,7 @@ The log (tray → **Open log**) records every connect and disconnect with its re
 Needs the .NET SDK (any recent version) on the build machine only:
 
 ```powershell
-.\build.ps1          # builds, runs the tests, writes dist\BetterMouse.exe
+.\build.ps1          # builds, runs the tests, writes dist\BetterMouseWithoutBorders.exe
 ```
 
 The project is in `src/BetterMouse` and the tests are in `tests/BetterMouse.Tests`. The tests run

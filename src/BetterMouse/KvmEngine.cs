@@ -258,7 +258,7 @@ namespace BetterMouse
             };
             RegisterClassEx(ref wc);
             overlay = CreateWindowEx(WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_LAYERED | WS_EX_NOACTIVATE,
-                overlayClass, "BetterMouse", WS_POPUP, 0, 0, OverlaySize, OverlaySize,
+                overlayClass, AppInfo.Name, WS_POPUP, 0, 0, OverlaySize, OverlaySize,
                 IntPtr.Zero, IntPtr.Zero, module, IntPtr.Zero);
             if (overlay == IntPtr.Zero)
             {

@@ -25,7 +25,7 @@ namespace BetterMouse
 
         public SettingsForm(Settings current, bool firstRun, string otherName = null)
         {
-            Text = "BetterMouse – Settings";
+            Text = AppInfo.Name + " – Settings";
             Font = SystemFonts.MessageBoxFont;
             AutoScaleMode = AutoScaleMode.None;
             using (var g = CreateGraphics()) scale = g.DpiX / 96f;
@@ -46,7 +46,7 @@ namespace BetterMouse
 
             if (firstRun)
             {
-                var intro = Note("Run BetterMouse on both PCs with the same security key. " +
+                var intro = Note("Run " + AppInfo.Name + " on both PCs with the same security key. " +
                     "Make the PC where you have admin rights the Host, and the other PC the Client. " +
                     "Everything stays on your local network – no internet needed.", S(980), bold: false);
                 root.Controls.Add(intro);
@@ -133,7 +133,7 @@ namespace BetterMouse
 
             // --- windows
             var win = Group("Windows", out var winBody);
-            autostartCheck = new CheckBox { Text = "Start BetterMouse when I sign in to Windows", AutoSize = true, Checked = Autostart.IsEnabled || firstRun };
+            autostartCheck = new CheckBox { Text = "Start " + AppInfo.Name + " when I sign in to Windows", AutoSize = true, Checked = Autostart.IsEnabled || firstRun };
             winBody.Controls.Add(autostartCheck);
             activityCheck = new CheckBox
             {
@@ -214,7 +214,7 @@ namespace BetterMouse
             Cursor = Cursors.WaitCursor;
             bool ok = Firewall.ConfigureWithElevation(out var message);
             Cursor = Cursors.Default;
-            MessageBox.Show(this, message, "BetterMouse", MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+            MessageBox.Show(this, message, AppInfo.Name, MessageBoxButtons.OK, ok ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
             RefreshFirewallStatus();
         }
 
@@ -224,7 +224,7 @@ namespace BetterMouse
             if (key.Length < 6)
             {
                 MessageBox.Show(this, "The security key must have at least 6 characters. Click Generate for a strong one, then type the same key on the other PC.",
-                    "BetterMouse", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 keyBox.Focus();
                 return;
             }
@@ -232,7 +232,7 @@ namespace BetterMouse
             if (clientRadio.Checked && address.Length == 0 && !discoveryCheck.Checked)
             {
                 MessageBox.Show(this, "Enter the host PC's IP address (shown at the top of Settings on the host), or enable the local network search.",
-                    "BetterMouse", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AppInfo.Name, MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 addressBox.Focus();
                 return;
             }
@@ -242,7 +242,7 @@ namespace BetterMouse
                 var answer = MessageBox.Show(this,
                     $"\"{string.Join(", ", names)}\" is a name, not an IP address. Names need DNS, which may stop working when the internet is down.\n\n" +
                     "An IP address is more reliable. Keep the name anyway?",
-                    "BetterMouse", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                    AppInfo.Name, MessageBoxButtons.YesNo, MessageBoxIcon.Question);
                 if (answer != DialogResult.Yes) { addressBox.Focus(); return; }
             }
 

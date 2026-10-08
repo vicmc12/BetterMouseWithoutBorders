@@ -14,7 +14,8 @@ namespace BetterMouse
     /// </summary>
     internal static class Firewall
     {
-        public const string RuleName = "BetterMouse";
+        public const string RuleName = AppInfo.Name;
+        const string LegacyRuleName = AppInfo.LegacyFileName;
         public const string ElevatedArgument = "--configure-firewall";
 
         static string ExePath => Application.ExecutablePath;
@@ -54,10 +55,12 @@ namespace BetterMouse
         public static int ApplyRules()
         {
             var exe = ExePath;
-            // Remove our old rule and any "block" rules Windows created when its pop-up was cancelled.
+            // Remove our old rules (also the pre-rename "BetterMouse" one, which points at the old
+            // exe) and any "block" rules Windows created when its pop-up was cancelled.
             Netsh($"advfirewall firewall delete rule name=\"{RuleName}\"");
+            Netsh($"advfirewall firewall delete rule name=\"{LegacyRuleName}\"");
             Netsh($"advfirewall firewall delete rule name=all program=\"{exe}\"");
-            return Netsh($"advfirewall firewall add rule name=\"{RuleName}\" dir=in action=allow program=\"{exe}\" enable=yes profile=any description=\"BetterMouse mouse/keyboard sharing (LAN)\"");
+            return Netsh($"advfirewall firewall add rule name=\"{RuleName}\" dir=in action=allow program=\"{exe}\" enable=yes profile=any description=\"{AppInfo.Name}: mouse/keyboard sharing on the local network\"");
         }
 
         /// <summary>Best-effort check, works without admin.</summary>

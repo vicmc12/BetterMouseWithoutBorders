@@ -213,7 +213,7 @@ namespace BetterMouse
         public bool Failed { get; private set; }
         public IReadOnlyList<string> TopLevelPaths => topLevel;
 
-        public static string TempRoot => Path.Combine(Path.GetTempPath(), "BetterMouse", "Clipboard");
+        public static string TempRoot => Path.Combine(Path.GetTempPath(), AppInfo.FileName, "Clipboard");
 
         public IncomingClip(int id, ClipKind kind, long totalBytes, long limitBytes)
         {

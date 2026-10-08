@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
@@ -120,10 +120,10 @@ namespace BetterMouse
 
             var peer = ReadExact(s, HelloSize);
             for (int i = 0; i < 4; i++)
-                if (peer[i] != Magic[i]) throw new ProtocolException("The other side is not BetterMouse");
+                if (peer[i] != Magic[i]) throw new ProtocolException("The other side is not " + AppInfo.Name);
             int version = peer[4] | peer[5] << 8;
             if (version != AppInfo.ProtocolVersion)
-                throw new ProtocolException($"Version mismatch (this PC speaks v{AppInfo.ProtocolVersion}, the other v{version}). Use the same BetterMouse.exe on both PCs.");
+                throw new ProtocolException($"Version mismatch (this PC speaks v{AppInfo.ProtocolVersion}, the other v{version}). Use the same version on both PCs.");
             var peerRole = (Role)peer[6];
             if (peerRole == role)
                 throw new ProtocolException(role == Role.Host
@@ -156,7 +156,7 @@ namespace BetterMouse
                 var r = new PacketReader(frame);
                 var name = r.String();
                 var peerVersion = r.String();
-                Log.Info($"Handshake OK with {name} (BetterMouse {peerVersion})");
+                Log.Info($"Handshake OK with {name} (version {peerVersion})");
                 return new Connection(client, s, channel, name);
             }
             catch
